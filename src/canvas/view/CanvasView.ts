@@ -4,11 +4,13 @@ import { BoxRect, Coordinates, CoordinatesTypes, ElementRect } from '../../commo
 import Component from '../../dom_components/model/Component';
 import ComponentView from '../../dom_components/view/ComponentView';
 import {
+  MIDDLE_MOUSE_BUTTON,
   createEl,
   getDocumentScroll,
   getElRect,
   getKeyChar,
   hasModifierKey,
+  hasShiftKey,
   isTextNode,
   off,
   on,
@@ -81,6 +83,7 @@ export default class CanvasView extends ModuleView<Canvas> {
 
   frames!: FramesView;
   frame?: FrameView;
+  isPanning: boolean = false;
 
   private timerZoom?: number;
 
@@ -89,7 +92,7 @@ export default class CanvasView extends ModuleView<Canvas> {
 
   constructor(model: Canvas) {
     super({ model });
-    bindAll(this, 'clearOff', 'onKeyPress', 'onWheel', 'onPointer');
+    bindAll(this, 'clearOff', 'onKeyPress', 'onWheel', 'onPointer', 'onPointerUp', 'onPointerDown');
     const { em, pfx, ppfx } = this;
     const { events } = this.module;
     this.className = `${pfx}canvas ${ppfx}no-touch-actions${!em.config.customUI ? ` ${pfx}canvas-bg` : ''}`;
@@ -155,6 +158,8 @@ export default class CanvasView extends ModuleView<Canvas> {
     fn(window, 'scroll resize', this.clearOff);
     fn(el, 'wheel', this.onWheel, { passive: !config.infiniteCanvas });
     fn(el, 'pointermove', this.onPointer);
+    fn(el, 'pointerdown', this.onPointerDown);
+    fn(el, 'pointerup', this.onPointerUp);
   }
 
   screenToWorld(x: number, y: number): Coordinates {
@@ -167,6 +172,22 @@ export default class CanvasView extends ModuleView<Canvas> {
       x: (x - coords.x - vwDelta.x) * zoom,
       y: (y - coords.y - vwDelta.y) * zoom,
     };
+  }
+
+  onPointerDown(ev: PointerEvent) {
+    if (!this.config.infiniteCanvas) return;
+
+    if (ev.button === MIDDLE_MOUSE_BUTTON) {
+      this.isPanning = true;
+    }
+  }
+
+  onPointerUp(ev: PointerEvent) {
+    if (!this.config.infiniteCanvas) return;
+
+    if (ev.button === MIDDLE_MOUSE_BUTTON) {
+      this.isPanning = false;
+    }
   }
 
   onPointer(ev: WheelEvent) {
@@ -185,6 +206,14 @@ export default class CanvasView extends ModuleView<Canvas> {
       const zoom = this.module.getZoomDecimal();
       screenCoords.x = frameRect.left - canvasRect.left + docScroll.x + ev.clientX * zoom;
       screenCoords.y = frameRect.top - canvasRect.top + docScroll.y + ev.clientY * zoom;
+    }
+
+    const pointerMoved = ev.movementX !== 0 || ev.movementY !== 0;
+    if (this.isPanning && pointerMoved) {
+      screenCoords.x += ev.movementX;
+      screenCoords.y += ev.movementY;
+      const { x, y } = this.module.getCoords();
+      this.module.setCoords(x + ev.movementX, y + ev.movementY);
     }
 
     this.model.set({
@@ -207,12 +236,17 @@ export default class CanvasView extends ModuleView<Canvas> {
     const { module, config } = this;
     if (config.infiniteCanvas) {
       this.preventDefault(ev);
-      const { deltaX, deltaY } = ev;
+      const { deltaX: baseDeltaX, deltaY: baseDeltaY } = ev;
+
       const zoom = module.getZoomDecimal();
       const isZooming = hasModifierKey(ev);
       const coords = module.getCoords();
 
       if (isZooming) {
+        // throttle mousewheel (default=120), otherwise it will zoom in/out too fast
+        const MAX_SCROLL_VALUE = 20;
+        const deltaY = Math.max(-MAX_SCROLL_VALUE, Math.min(MAX_SCROLL_VALUE, baseDeltaY));
+
         const newZoom = zoom - deltaY * zoom * 0.01;
         module.setZoom(newZoom * 100);
 
@@ -227,6 +261,8 @@ export default class CanvasView extends ModuleView<Canvas> {
         module.setCoords(x, y);
       } else {
         this.onPointer(ev);
+        // with shift key down, mousewheel will scroll horizontally
+        const [deltaX, deltaY] = hasShiftKey(ev) && baseDeltaX === 0 ? [baseDeltaY, 0] : [baseDeltaX, baseDeltaY];
         module.setCoords(coords.x - deltaX, coords.y - deltaY);
       }
     }

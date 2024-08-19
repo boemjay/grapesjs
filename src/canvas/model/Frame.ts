@@ -231,7 +231,7 @@ export default class Frame extends ModuleModel<CanvasModule> {
   hasAutoHeight() {
     const { height } = this.attributes;
 
-    if (height === 'auto' || this.config.infiniteCanvas) {
+    if (height === 'auto' || this.config.infiniteCanvasAutoHeight) {
       return true;
     }
 

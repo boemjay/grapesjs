@@ -89,6 +89,7 @@ export interface CanvasConfig {
    * Experimental: enable infinite canvas.
    */
   infiniteCanvas?: boolean;
+  infiniteCanvasAutoHeight?: boolean;
 }
 
 const config: CanvasConfig = {

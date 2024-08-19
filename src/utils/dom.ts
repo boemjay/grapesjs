@@ -205,6 +205,8 @@ export const hasCtrlKey = (ev: WheelEvent) => ev.ctrlKey;
 
 export const hasModifierKey = (ev: WheelEvent) => hasCtrlKey(ev) || ev.metaKey;
 
+export const hasShiftKey = (ev: WheelEvent) => ev.shiftKey;
+
 // Ref: https://stackoverflow.com/a/10162353
 export const doctypeToString = (dt?: DocumentType | null) => {
   if (!dt) return '';
@@ -247,3 +249,5 @@ export const off = <E extends Event = Event>(
     els.forEach(el => el?.removeEventListener(ev, fn as EventListener, opts));
   });
 };
+
+export const MIDDLE_MOUSE_BUTTON = 1;
