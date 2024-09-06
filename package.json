@@ -1,6 +1,6 @@
 {
-  "name": "grapesjs",
-  "description": "Free and Open Source Web Builder Framework",
+  "name": "@boemjay/grapesjs",
+  "description": "Free and Open Source Web Builder Framework, fork by boemjay",
   "version": "0.21.12",
   "author": "Artur Arseniev",
   "license": "BSD-3-Clause",

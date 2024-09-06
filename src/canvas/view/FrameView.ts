@@ -326,13 +326,14 @@ export default class FrameView extends ModuleView<Frame, HTMLIFrameElement> {
     };
 
     el.onload = () => {
-      const { frameContent } = this.config;
-      if (frameContent) {
-        const doc = this.getDoc();
-        doc.open();
-        doc.write(frameContent);
-        doc.close();
-      }
+      // Disable warning in browser console
+      // const { frameContent } = this.config;
+      // if (frameContent) {
+      //   const doc = this.getDoc();
+      //   doc.open();
+      //   doc.write(frameContent);
+      //   doc.close();
+      // }
       evOpts.window = this.getWindow();
       em?.trigger(`${evLoad}:before`, evOpts); // deprecated
       em?.trigger(CanvasEvents.frameLoad, evOpts);
